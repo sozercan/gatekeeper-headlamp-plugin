@@ -27,15 +27,63 @@ A Headlamp plugin for viewing OPA Gatekeeper policies and violations in Kubernet
 
 2. Install dependencies:
    ```bash
+   make install
+   # or
    npm install
    ```
 
-3. Build the plugin:
+3. Build and deploy the plugin:
    ```bash
-   npm run build
+   make dev
+   # or manually:
+   # make build
+   # make deploy
    ```
 
-4. The built plugin will be in the `dist/` directory.
+4. The plugin will be automatically deployed to your Headlamp plugins directory.
+
+### Makefile Commands
+
+This project includes a comprehensive Makefile with extensive documentation for easy development.
+
+**View all available commands:**
+```bash
+make help
+```
+
+**Most common workflows:**
+```bash
+make setup      # First time setup (install, build, deploy)
+make dev        # Development workflow (build and deploy)
+make quick      # Fast iteration (build and deploy without clean)
+make validate   # Ensure everything builds correctly
+```
+
+The Makefile includes comprehensive documentation with detailed explanations of:
+- Build process and directory structure
+- Platform support (macOS/Linux/Windows)
+- Development workflows
+- Troubleshooting guides
+- Complete command reference
+
+All documentation is integrated directly into the Makefile as comments for easy access.
+
+### Quick Start
+
+For first-time setup:
+```bash
+make setup
+```
+
+For daily development:
+```bash
+make dev
+```
+
+For fast iteration during development:
+```bash
+make quick
+```
 
 ### Loading the Plugin in Headlamp
 

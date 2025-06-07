@@ -11,7 +11,7 @@
     "format": "headlamp-plugin format",
     "test": "headlamp-plugin test",
     "tsc": "headlamp-plugin tsc",
-    "extract": "headlamp-plugin extract",
+    "extract": "headlamp-plugin extract . .plugins",
     "crd-to-types": "./hack/crd-to-api.sh"
   },
   "keywords": [
