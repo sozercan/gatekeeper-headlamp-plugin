@@ -2,25 +2,71 @@ import {
   Link as HeadlampLink,
   SectionBox,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { KubeObject } from '@kinvolk/headlamp-plugin/lib/lib/k8s/cluster';
 import { Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { RoutingPath } from '../index';
-import { ConstraintClass } from '../model';
+import { ConstraintClass, ConstraintTemplateClass } from '../model';
+import { SimpleConstraintClass } from '../simpleModel';
 import { Constraint } from '../types';
 
 interface ConstraintListProps {}
 
 function ConstraintList({}: ConstraintListProps) {
-  const [constraints, setConstraints] = useState<KubeObject[] | null>(null);
+  const [constraints, setConstraints] = useState<any[] | null>(null);
+  const [templates, setTemplates] = useState<any[] | null>(null);
 
-  ConstraintClass.useApiList(setConstraints);
+  console.log('🔍 ConstraintList component mounted');
+  
+  // Test ConstraintTemplates API first
+  ConstraintTemplateClass.useApiList((templateData: any) => {
+    console.log('📋 Templates data received:', templateData);
+    setTemplates(templateData);
+  });
+
+  // Test both approaches
+  SimpleConstraintClass.useApiList((simpleData: any) => {
+    console.log('🔧 SimpleConstraintClass received data:', simpleData);
+    if (simpleData && simpleData.length > 0) {
+      console.log('✅ Simple approach worked, using simple data');
+      setConstraints(simpleData);
+    }
+  });
+
+  ConstraintClass.useApiList((data) => {
+    console.log('🎯 ConstraintClass received data:', data);
+    if (!constraints) { // Only use dynamic if simple didn't work
+      setConstraints(data);
+    }
+  });
+
+  console.log('📊 Current constraints state:', constraints);
+  console.log('📋 Current templates state:', templates);
 
   if (!constraints) {
-    return <Typography>Loading constraints...</Typography>;
+    console.log('⏳ Loading constraints...');
+    return (
+      <div>
+        <Typography>Loading constraints...</Typography>
+        {templates && (
+          <Typography variant="caption" color="textSecondary">
+            Found {templates.length} constraint templates
+          </Typography>
+        )}
+      </div>
+    );
   }
 
-  const constraintList = constraints.map((item: KubeObject) => item.jsonData as Constraint);
+  console.log('✅ Constraints loaded, count:', constraints.length);
+
+  // Handle both KubeObject instances and raw constraint objects
+  const constraintList = constraints.map((item: any) => {
+    // If it's a KubeObject with jsonData, extract that
+    if (item.jsonData) {
+      return item.jsonData as Constraint;
+    }
+    // Otherwise, treat it as a raw constraint object
+    return item as Constraint;
+  });
 
   function makeEnforcementActionChip(item: Constraint) {
     const action = item.spec?.enforcementAction || 'warn';

@@ -14,6 +14,7 @@ import {
   TableRow} from '@mui/material';
 import React, { useState } from 'react';
 import { ConstraintClass } from '../model';
+import { SimpleConstraintClass } from '../simpleModel';
 import { Constraint, Violation } from '../types';
 
 interface ViolationsListProps {}
@@ -27,7 +28,22 @@ interface ViolationWithConstraint extends Violation {
 function ViolationsList({}: ViolationsListProps) {
   const [constraintObjects, setConstraintObjects] = useState<any[] | null>(null);
 
-  ConstraintClass.useApiList(setConstraintObjects);
+  console.log('🔍 ViolationsList component mounted');
+  // Test both approaches  
+  SimpleConstraintClass.useApiList((simpleData: any) => {
+    console.log('🔧 ViolationsList SimpleConstraintClass received data:', simpleData);
+    if (simpleData && simpleData.length > 0) {
+      console.log('✅ Violations using simple approach data');
+      setConstraintObjects(simpleData);
+    }
+  });
+
+  ConstraintClass.useApiList((data) => {
+    console.log('🎯 ViolationsList received constraint data:', data);
+    if (!constraintObjects) { // Only use dynamic if simple didn't work
+      setConstraintObjects(data);
+    }
+  });
 
   // Flatten violations from all constraints
   const violations: ViolationWithConstraint[] = React.useMemo(() => {
@@ -36,8 +52,8 @@ function ViolationsList({}: ViolationsListProps) {
     const allViolations: ViolationWithConstraint[] = [];
 
     constraintObjects.forEach((constraintObj: any) => {
-      // Extract the actual constraint data from KubeObject
-      const constraint = constraintObj.jsonData as Constraint;
+      // Handle both KubeObject instances and raw constraint objects
+      const constraint = constraintObj.jsonData ? (constraintObj.jsonData as Constraint) : (constraintObj as Constraint);
 
       if (constraint.status?.violations) {
         constraint.status.violations.forEach((violation) => {
