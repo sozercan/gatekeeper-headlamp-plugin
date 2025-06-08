@@ -6,7 +6,6 @@ import { Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } fr
 import React, { useState } from 'react';
 import { RoutingPath } from '../index';
 import { ConstraintClass, ConstraintTemplateClass } from '../model';
-import { SimpleConstraintClass } from '../simpleModel';
 import { Constraint } from '../types';
 
 interface ConstraintListProps {}
@@ -15,35 +14,25 @@ function ConstraintList({}: ConstraintListProps) {
   const [constraints, setConstraints] = useState<any[] | null>(null);
   const [templates, setTemplates] = useState<any[] | null>(null);
 
-  console.log('🔍 ConstraintList component mounted');
+  console.log('🔍 [ConstraintList] component mounted');
 
   // Test ConstraintTemplates API first
   ConstraintTemplateClass.useApiList((templateData: any) => {
-    console.log('📋 Templates data received:', templateData);
+    console.log('📋 [ConstraintList] ConstraintTemplateClass.useApiList received template data:', templateData);
     setTemplates(templateData);
   });
 
-  // Test both approaches
-  SimpleConstraintClass.useApiList((simpleData: any) => {
-    console.log('🔧 SimpleConstraintClass received data:', simpleData);
-    if (simpleData && simpleData.length > 0) {
-      console.log('✅ Simple approach worked, using simple data');
-      setConstraints(simpleData);
-    }
-  });
-
+  // Use only the dynamic ConstraintClass
   ConstraintClass.useApiList((data) => {
-    console.log('🎯 ConstraintClass received data:', data);
-    if (!constraints) { // Only use dynamic if simple didn't work
-      setConstraints(data);
-    }
+    console.log('🎯 [ConstraintList] ConstraintClass.useApiList received constraint data:', data);
+    setConstraints(data);
   });
 
-  console.log('📊 Current constraints state:', constraints);
-  console.log('📋 Current templates state:', templates);
+  console.log('📊 [ConstraintList] Current constraints state:', constraints);
+  console.log('📋 [ConstraintList] Current templates state:', templates);
 
   if (!constraints) {
-    console.log('⏳ Loading constraints...');
+    console.log('⏳ [ConstraintList] Loading constraints...');
     return (
       <div>
         <Typography>Loading constraints...</Typography>
@@ -94,40 +83,44 @@ function ConstraintList({}: ConstraintListProps) {
 
   return (
     <SectionBox title="Constraints">
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Kind</TableCell>
-            <TableCell>Enforcement Action</TableCell>
-            <TableCell>Matched Kinds</TableCell>
-            <TableCell>Violations</TableCell>
-            <TableCell>Age</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {constraintList.map((constraint) => (
-            <TableRow key={`${constraint.kind}-${constraint.metadata.name}`}>
-              <TableCell>
-                <HeadlampLink
-                  routeName={RoutingPath.Constraint}
-                  params={{
-                    kind: constraint.kind,
-                    name: constraint.metadata.name,
-                  }}
-                >
-                  {constraint.metadata.name}
-                </HeadlampLink>
-              </TableCell>
-              <TableCell>{constraint.kind}</TableCell>
-              <TableCell>{makeEnforcementActionChip(constraint)}</TableCell>
-              <TableCell>{getMatchedKinds(constraint)}</TableCell>
-              <TableCell>{getViolationCount(constraint)}</TableCell>
-              <TableCell>{constraint.metadata.creationTimestamp}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {constraints.length === 0 ? (
+        <Typography sx={{ padding: 2 }}>No constraints found.</Typography>
+      ) : (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Kind</TableCell>
+                <TableCell>Enforcement Action</TableCell>
+                <TableCell>Matched Kinds</TableCell>
+                <TableCell>Violations</TableCell>
+                <TableCell>Age</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {constraintList.map((constraint) => (
+                <TableRow key={`${constraint.kind}-${constraint.metadata.name}`}>
+                  <TableCell>
+                    <HeadlampLink
+                      routeName={RoutingPath.Constraint}
+                      params={{
+                        kind: constraint.kind,
+                        name: constraint.metadata.name,
+                      }}
+                    >
+                      {constraint.metadata.name}
+                    </HeadlampLink>
+                  </TableCell>
+                  <TableCell>{constraint.kind}</TableCell>
+                  <TableCell>{makeEnforcementActionChip(constraint)}</TableCell>
+                  <TableCell>{getMatchedKinds(constraint)}</TableCell>
+                  <TableCell>{getViolationCount(constraint)}</TableCell>
+                  <TableCell>{constraint.metadata.creationTimestamp}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+      )}
     </SectionBox>
   );
 }

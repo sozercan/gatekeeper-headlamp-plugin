@@ -12,7 +12,8 @@
     "test": "headlamp-plugin test",
     "tsc": "headlamp-plugin tsc",
     "extract": "headlamp-plugin extract . .plugins",
-    "crd-to-types": "./hack/crd-to-api.sh"
+    "crd-to-types": "./hack/crd-to-api.sh",
+    "test:dynamic-constraints": "node --experimental-vm-modules ./test/test-dynamic-constraints.js"
   },
   "keywords": [
     "headlamp",
