@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Dynamic Constraint Discovery</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Dynamic Constraint Discovery</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            console.log(message);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = typeof message === 'object' ? `<pre>${JSON.stringify(message, null, 2)}</pre>` : message;
+            output.appendChild(div);
+        }
+
+        async function testDynamicDiscovery() {
+            try {
+                log('🚀 Starting dynamic constraint discovery test...', 'info');
+
+                // Step 1: Discover constraint templates
+                log('1️⃣ Fetching ConstraintTemplates via Headlamp API...', 'info');
+                const templatesResp = await fetch('/apis/templates.gatekeeper.sh/v1beta1/constrainttemplates');
+
+                if (!templatesResp.ok) {
+                    throw new Error(`Templates API failed: ${templatesResp.status} ${templatesResp.statusText}`);
+                }
+
+                const templates = await templatesResp.json();
+                log(`✅ Found ${templates.items.length} constraint templates`, 'success');
+
+                // Step 2: Extract constraint types
+                log('2️⃣ Extracting constraint types...', 'info');
+                const constraintTypes = templates.items.map(template => {
+                    const kind = template.spec?.crd?.spec?.names?.kind;
+                    const plural = template.spec?.crd?.spec?.names?.plural;
+
+                    log(`   Template: ${template.metadata.name} | Kind: ${kind} | Plural: ${plural || 'undefined'}`, 'info');
+
+                    if (plural) {
+                        return plural.toLowerCase();
+                    } else if (kind) {
+                        return kind.toLowerCase();
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                log(`🎯 Discovered constraint types: [${constraintTypes.join(', ')}]`, 'success');
+
+                // Step 3: Fetch constraints for each type
+                log('3️⃣ Fetching constraints for each type...', 'info');
+                let totalConstraints = 0;
+                let totalViolations = 0;
+
+                for (const type of constraintTypes) {
+                    log(`📡 Fetching constraints of type: ${type}`, 'info');
+
+                    const constraintsResp = await fetch(`/apis/constraints.gatekeeper.sh/v1beta1/${type}`);
+
+                    if (!constraintsResp.ok) {
+                        log(`❌ Failed to fetch ${type}: ${constraintsResp.status} ${constraintsResp.statusText}`, 'error');
+                        continue;
+                    }
+
+                    const constraints = await constraintsResp.json();
+                    log(`✅ Found ${constraints.items.length} constraints of type ${type}`, 'success');
+
+                    totalConstraints += constraints.items.length;
+
+                    // Show constraint details
+                    constraints.items.forEach(constraint => {
+                        const violations = constraint.status?.totalViolations || 0;
+                        totalViolations += violations;
+                        log(`   - ${constraint.metadata.name}: ${violations} violations`, 'info');
+                    });
+                }
+
+                // Step 4: Summary
+                log('📊 Summary:', 'info');
+                log(`   Templates: ${templates.items.length}`, 'info');
+                log(`   Constraint types: ${constraintTypes.length}`, 'info');
+                log(`   Total constraints: ${totalConstraints}`, 'info');
+                log(`   Total violations: ${totalViolations}`, 'info');
+
+                if (constraintTypes.length > 0 && totalConstraints > 0) {
+                    log('🎉 Dynamic discovery is working correctly through Headlamp API!', 'success');
+                } else {
+                    log('⚠️ No constraints found - may be an issue with Gatekeeper or API access', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        // Run the test when the page loads
+        window.addEventListener('load', testDynamicDiscovery);
+    </script>
+</body>
+</html>

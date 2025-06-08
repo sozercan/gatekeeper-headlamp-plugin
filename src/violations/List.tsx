@@ -29,7 +29,7 @@ function ViolationsList({}: ViolationsListProps) {
   const [constraintObjects, setConstraintObjects] = useState<any[] | null>(null);
 
   console.log('🔍 ViolationsList component mounted');
-  // Test both approaches  
+  // Test both approaches
   SimpleConstraintClass.useApiList((simpleData: any) => {
     console.log('🔧 ViolationsList SimpleConstraintClass received data:', simpleData);
     if (simpleData && simpleData.length > 0) {

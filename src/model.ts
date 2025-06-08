@@ -14,10 +14,7 @@ export const ConstraintTemplateClass = makeCustomResourceClass({
 // Utility function to discover constraint types from ConstraintTemplates
 async function discoverConstraintTypes(): Promise<string[]> {
   try {
-    console.log('🔍 Discovering constraint types from ConstraintTemplates...');
-
     const templatesResponse = await request('/apis/templates.gatekeeper.sh/v1beta1/constrainttemplates');
-    console.log('📋 Templates API response:', templatesResponse);
 
     if (templatesResponse?.items) {
       const constraintTypes = templatesResponse.items.map((template: any) => {
@@ -33,14 +30,12 @@ async function discoverConstraintTypes(): Promise<string[]> {
         return null;
       }).filter(Boolean);
 
-      console.log('🎯 Discovered constraint types:', constraintTypes);
       return constraintTypes;
     }
 
-    console.log('⚠️ No constraint templates found');
     return [];
   } catch (error) {
-    console.error('❌ Error discovering constraint types:', error);
+    console.error('Error discovering constraint types:', error);
     return [];
   }
 }
@@ -49,14 +44,10 @@ async function discoverConstraintTypes(): Promise<string[]> {
 async function fetchConstraintsOfType(constraintType: string): Promise<any[]> {
   try {
     const url = `/apis/constraints.gatekeeper.sh/v1beta1/${constraintType}`;
-    console.log(`📡 Fetching constraints from: ${url}`);
-
     const response = await request(url);
-    console.log(`📦 Response for ${constraintType}:`, response?.items?.length || 0, 'items');
-
     return response?.items || [];
   } catch (error) {
-    console.error(`❌ Error fetching constraints of type ${constraintType}:`, error);
+    console.error(`Error fetching constraints of type ${constraintType}:`, error);
     return [];
   }
 }
@@ -74,15 +65,12 @@ export const ConstraintClass = {
     // Discover constraint types on component mount
     React.useEffect(() => {
       const performDiscovery = async () => {
-        console.log('🚀 Starting constraint type discovery...');
-        
         // Use cached promise to avoid multiple simultaneous discoveries
         if (!constraintTypesPromise) {
           constraintTypesPromise = discoverConstraintTypes();
         }
-        
+
         const types = await constraintTypesPromise;
-        console.log('✅ Discovery complete, found types:', types);
         setDiscoveredTypes(types);
       };
 
@@ -93,25 +81,21 @@ export const ConstraintClass = {
     React.useEffect(() => {
       if (discoveredTypes.length === 0) return;
 
-      console.log('🔗 Setting up hooks for constraint types:', discoveredTypes);
-      
       // We'll use direct API calls instead of dynamic hooks since React doesn't allow conditional hooks
       const fetchAllConstraintData = async () => {
         const allData: any[] = [];
-        
+
         for (const type of discoveredTypes) {
           try {
             const constraints = await fetchConstraintsOfType(type);
             if (constraints.length > 0) {
-              console.log(`📊 Found ${constraints.length} constraints of type ${type}`);
               allData.push(...constraints);
             }
           } catch (error) {
-            console.error(`💥 Failed to fetch constraints for type ${type}:`, error);
+            console.error(`Failed to fetch constraints for type ${type}:`, error);
           }
         }
-        
-        console.log('🎯 Total constraints discovered:', allData.length);
+
         setAllConstraints(allData);
       };
 
@@ -120,7 +104,6 @@ export const ConstraintClass = {
 
     // Update the data callback when constraints change
     React.useEffect(() => {
-      console.log('📤 Sending constraints to component:', allConstraints.length);
       setData(allConstraints);
     }, [allConstraints, setData]);
   },
@@ -133,12 +116,10 @@ export const ConstraintClass = {
     // Discover constraint types first
     React.useEffect(() => {
       const performDiscovery = async () => {
-        console.log(`🔍 Discovering types to find constraint: ${name}`);
-        
         if (!constraintTypesPromise) {
           constraintTypesPromise = discoverConstraintTypes();
         }
-        
+
         const types = await constraintTypesPromise;
         setDiscoveredTypes(types);
       };
@@ -153,20 +134,17 @@ export const ConstraintClass = {
       if (!name || discoveredTypes.length === 0) return;
 
       const findConstraint = async () => {
-        console.log(`🎯 Searching for constraint ${name} in types:`, discoveredTypes);
-
         // If a specific constraint type is provided, try that first
         if (constraintType) {
           try {
             const url = `/apis/constraints.gatekeeper.sh/v1beta1/${constraintType}/${name}`;
             const response = await request(url);
             if (response) {
-              console.log(`✅ Found constraint ${name} in specified type ${constraintType}`);
               setConstraintData(response);
               return;
             }
           } catch (error) {
-            console.log(`❌ Constraint ${name} not found in specified type ${constraintType}`);
+            // Constraint not found in specified type, continue to search all types
           }
         }
 
@@ -176,16 +154,15 @@ export const ConstraintClass = {
             const url = `/apis/constraints.gatekeeper.sh/v1beta1/${type}/${name}`;
             const response = await request(url);
             if (response) {
-              console.log(`✅ Found constraint ${name} in type ${type}`);
               setConstraintData(response);
               return;
             }
           } catch (error) {
-            console.log(`🔍 Constraint ${name} not found in type ${type}, continuing...`);
+            // Continue searching in other types
           }
         }
 
-        console.log(`❌ Constraint ${name} not found in any type`);
+        // Constraint not found in any type
         setConstraintData(null);
       };
 

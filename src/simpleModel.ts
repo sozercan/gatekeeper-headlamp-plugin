@@ -32,8 +32,7 @@ export const SimpleConstraintClass = {
       const allConstraints = [];
       if (allowedRepos) allConstraints.push(...allowedRepos);
       if (containerLimits) allConstraints.push(...containerLimits);
-      
-      console.log('📊 SimpleConstraintClass aggregated:', allConstraints.length, 'constraints');
+
       setData(allConstraints);
     }, [allowedRepos, containerLimits]);
   },

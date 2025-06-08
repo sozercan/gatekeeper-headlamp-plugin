@@ -16,7 +16,7 @@ function ConstraintList({}: ConstraintListProps) {
   const [templates, setTemplates] = useState<any[] | null>(null);
 
   console.log('🔍 ConstraintList component mounted');
-  
+
   // Test ConstraintTemplates API first
   ConstraintTemplateClass.useApiList((templateData: any) => {
     console.log('📋 Templates data received:', templateData);
