@@ -8,6 +8,8 @@ import ConstraintTemplateDetails from './constraint-template/Details';
 import ConstraintTemplateList from './constraint-template/List';
 import ViolationsDetails from './violations/Details';
 import ViolationsList from './violations/List';
+import LibraryList from './library/List';
+import LibraryTemplateDetails from './library/TemplateDetails';
 
 export namespace RoutingPath {
   export const ConstraintTemplates = '/gatekeeper/constraint-templates';
@@ -16,6 +18,8 @@ export namespace RoutingPath {
   export const Constraint = '/gatekeeper/constraints/:kind/:name';
   export const Violations = '/gatekeeper/violations';
   export const Violation = '/gatekeeper/violations/:kind/:name';
+  export const Library = '/gatekeeper/library'; // Added Library path
+  export const LibraryTemplate = '/gatekeeper/library/template/:id'; // Added Library Template path
 }
 
 // Register sidebar items
@@ -48,6 +52,14 @@ registerSidebarEntry({
   url: RoutingPath.Violations,
 });
 
+// Added SidebarEntry for Policy Library
+registerSidebarEntry({
+  parent: 'gatekeeper',
+  name: 'policylibrary',
+  label: 'Policy Library',
+  url: RoutingPath.Library,
+});
+
 // Register routes for ConstraintTemplates
 registerRoute({
   path: RoutingPath.ConstraintTemplates,
@@ -59,9 +71,9 @@ registerRoute({
 
 registerRoute({
   path: RoutingPath.ConstraintTemplate,
-  sidebar: 'constrainttemplates',
   name: 'Constraint Template Details',
   exact: true,
+  sidebar: null,
   component: () => <ConstraintTemplateDetails />,
 });
 
@@ -76,9 +88,9 @@ registerRoute({
 
 registerRoute({
   path: RoutingPath.Constraint,
-  sidebar: 'constraints',
   name: 'Constraint Details',
   exact: true,
+  sidebar: null,
   component: () => <ConstraintDetails />,
 });
 
@@ -93,10 +105,27 @@ registerRoute({
 
 registerRoute({
   path: RoutingPath.Violation,
-  sidebar: 'violations',
   name: 'Violation Details',
   exact: true,
+  sidebar: null,
   component: () => <ViolationsDetails />,
+});
+
+// Routes for the Gatekeeper Library
+registerRoute({
+  path: RoutingPath.Library,
+  name: 'Policy Library', // Name for the route itself
+  sidebar: 'policylibrary', // Matches name in registerSidebarEntry
+  exact: true, // Add exact: true here
+  component: LibraryList,
+});
+
+registerRoute({
+  path: RoutingPath.LibraryTemplate,
+  name: 'Library Template Details', // Name for the route
+  sidebar: null, // Detail view, no dedicated sidebar highlight beyond parent
+  exact: true, // Add exact: true here
+  component: LibraryTemplateDetails,
 });
 
 // Export plugin info for Headlamp recognition
