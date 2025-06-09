@@ -5,6 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "headlamp-plugin build",
+    "package": "headlamp-plugin package",
     "start": "headlamp-plugin start",
     "lint": "headlamp-plugin lint",
     "lint-fix": "headlamp-plugin lint --fix",

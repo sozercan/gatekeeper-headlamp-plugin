@@ -1,0 +1,41 @@
+version: 0.1.0
+name: gatekeeper
+displayName: Gatekeeper
+createdAt: "2025-06-09T12:25:00-07:00"
+description: Headlamp plugin for Gatekeeper
+logoURL: https://www.openpolicyagent.org/img/nav/logo.png
+readme: |-
+  # Gatekeeper Headlamp Plugin
+
+  This plugin integrates Gatekeeper with Headlamp, providing a UI for managing
+  ConstraintTemplates, Constraints, and viewing violations.
+
+  ## Features
+
+  - List and view ConstraintTemplates
+  - List and view Constraints
+  - View Gatekeeper audit violations
+  - Apply templates from a library
+
+  ## Installation
+
+  [Instructions on how to install/use the plugin, usually covered by Headlamp's general plugin mechanism]
+
+  ## Usage
+
+  [Details on how to use the plugin's features]
+
+  For more information, see the [Gatekeeper documentation](https://open-policy-agent.github.io/gatekeeper/website/docs/)
+  and the [Headlamp documentation](https://headlamp.dev/).
+keywords:
+  - gatekeeper
+  - headlamp
+  - plugin
+  - opa
+  - policy
+links:
+  - name: source
+    url: https://github.com/sozercan/gatekeeper-headlamp-plugin
+changes:
+  - kind: added
+    description: Initial release of the Gatekeeper plugin.
