@@ -7,6 +7,7 @@ yarn-error.log*
 # Build output
 dist/
 build/
+.plugins/
 
 # Runtime data
 pids
@@ -37,6 +38,16 @@ logs
 
 # Coverage directory used by tools like istanbul
 coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Headlamp plugin specific
+*.tgz
+
+# Test files
+test-*.js
+debug-*.js
 
 # Package lock files (optional, depending on preference)
 # package-lock.json

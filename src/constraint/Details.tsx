@@ -1,7 +1,6 @@
 import {
   SectionBox,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { KubeObject } from '@kinvolk/headlamp-plugin/lib/lib/k8s/cluster';
 import { Box, Chip, Table, TableBody, TableCell, TableHead, TableRow,Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -12,7 +11,7 @@ interface ConstraintDetailsProps {}
 
 function ConstraintDetails({}: ConstraintDetailsProps) {
   const { name } = useParams<{ kind: string; name: string }>();
-  const [item, setItem] = useState<KubeObject | null>(null);
+  const [item, setItem] = useState<any | null>(null);
 
   ConstraintClass.useApiGet(setItem, name);
 
@@ -20,7 +19,8 @@ function ConstraintDetails({}: ConstraintDetailsProps) {
     return <Typography>Loading constraint details...</Typography>;
   }
 
-  const constraint = item.jsonData as Constraint;
+  // Handle both KubeObject instances and raw constraint objects
+  const constraint = item.jsonData ? (item.jsonData as Constraint) : (item as Constraint);
 
   function getMainInfoRows() {
     const action = constraint.spec?.enforcementAction || 'warn';

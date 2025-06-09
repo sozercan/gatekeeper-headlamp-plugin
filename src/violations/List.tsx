@@ -11,7 +11,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow} from '@mui/material';
+  TableRow,
+  Typography,
+} from '@mui/material';
 import React, { useState } from 'react';
 import { ConstraintClass } from '../model';
 import { Constraint, Violation } from '../types';
@@ -27,17 +29,29 @@ interface ViolationWithConstraint extends Violation {
 function ViolationsList({}: ViolationsListProps) {
   const [constraintObjects, setConstraintObjects] = useState<any[] | null>(null);
 
-  ConstraintClass.useApiList(setConstraintObjects);
+  console.log('🔍 [ViolationsList] component mounted');
+
+  const handleSetConstraintObjects = React.useCallback((data: any[] | null) => {
+    console.log('🎯 [ViolationsList] ConstraintClass.useApiList received data:', data);
+    setConstraintObjects(data);
+  }, []); // Empty dependency array: callback is created once
+
+  // Use only the dynamic ConstraintClass
+  ConstraintClass.useApiList(handleSetConstraintObjects);
 
   // Flatten violations from all constraints
   const violations: ViolationWithConstraint[] = React.useMemo(() => {
-    if (!constraintObjects) return [];
+    if (!constraintObjects) {
+      console.log('[ViolationsList] No constraint objects yet, returning empty violations.');
+      return [];
+    }
 
+    console.log('[ViolationsList] Processing constraintObjects:', constraintObjects);
     const allViolations: ViolationWithConstraint[] = [];
 
     constraintObjects.forEach((constraintObj: any) => {
-      // Extract the actual constraint data from KubeObject
-      const constraint = constraintObj.jsonData as Constraint;
+      // Handle both KubeObject instances and raw constraint objects
+      const constraint = constraintObj.jsonData ? (constraintObj.jsonData as Constraint) : (constraintObj as Constraint);
 
       if (constraint.status?.violations) {
         constraint.status.violations.forEach((violation) => {
@@ -51,7 +65,7 @@ function ViolationsList({}: ViolationsListProps) {
       }
     });
 
-    console.log('Processed violations:', allViolations);
+    console.log('[ViolationsList] Processed violations:', allViolations);
     return allViolations;
   }, [constraintObjects]);
 
@@ -75,54 +89,64 @@ function ViolationsList({}: ViolationsListProps) {
   return (
     <SectionBox title="Violations">
       {!constraintObjects ? (
-        <Loader title="Loading violations" />
+        <Loader title="Loading violations..." />
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Resource</TableCell>
-                <TableCell>Kind</TableCell>
-                <TableCell>Constraint</TableCell>
-                <TableCell>Constraint Kind</TableCell>
-                <TableCell>Enforcement</TableCell>
-                <TableCell>Message</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {violations.map((violation, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Link
-                      routeName="gatekeeper/violations/:kind/:name"
-                      params={{
-                        kind: violation.constraintKind,
-                        name: violation.constraintName,
-                      }}
-                    >
-                      {getResourceName(violation)}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{violation.kind}</TableCell>
-                  <TableCell>
-                    <Link
-                      routeName="gatekeeper/constraints/:kind/:name"
-                      params={{
-                        kind: violation.constraintKind,
-                        name: violation.constraintName,
-                      }}
-                    >
-                      {violation.constraintName}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{violation.constraintKind}</TableCell>
-                  <TableCell>{makeEnforcementActionChip(violation)}</TableCell>
-                  <TableCell>{violation.message}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <>
+            {constraintObjects.length === 0 && (
+              <Typography sx={{ padding: 2 }}>No violations found.</Typography>
+            )}
+            {violations.length === 0 && constraintObjects.length > 0 && (
+              <Typography sx={{ padding: 2 }}>No violations found across {constraintObjects.length} constraints.</Typography>
+            )}
+            {violations.length > 0 && (
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Resource</TableCell>
+                      <TableCell>Kind</TableCell>
+                      <TableCell>Constraint</TableCell>
+                      <TableCell>Constraint Kind</TableCell>
+                      <TableCell>Enforcement</TableCell>
+                      <TableCell>Message</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {violations.map((violation, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Link
+                            routeName="gatekeeper/violations/:kind/:name"
+                            params={{
+                              kind: violation.constraintKind,
+                              name: violation.constraintName,
+                            }}
+                          >
+                            {getResourceName(violation)}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{violation.kind}</TableCell>
+                        <TableCell>
+                          <Link
+                            routeName="gatekeeper/constraints/:kind/:name"
+                            params={{
+                              kind: violation.constraintKind,
+                              name: violation.constraintName,
+                            }}
+                          >
+                            {violation.constraintName}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{violation.constraintKind}</TableCell>
+                        <TableCell>{makeEnforcementActionChip(violation)}</TableCell>
+                        <TableCell>{violation.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </>
       )}
     </SectionBox>
   );
