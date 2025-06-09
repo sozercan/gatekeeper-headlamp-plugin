@@ -13,8 +13,14 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Box, // Added Box
+  Select, // Added Select
+  MenuItem, // Added MenuItem
+  FormControl, // Added FormControl
+  InputLabel, // Added InputLabel
+  TextField, // Added TextField
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react'; // Added useMemo, useEffect
 import { ConstraintClass } from '../model';
 import { Constraint, Violation } from '../types';
 
@@ -28,6 +34,16 @@ interface ViolationWithConstraint extends Violation {
 
 function ViolationsList({}: ViolationsListProps) {
   const [constraintObjects, setConstraintObjects] = useState<any[] | null>(null);
+  // Filter states
+  const [resourceKindFilter, setResourceKindFilter] = useState<string>('All');
+  const [constraintKindFilter, setConstraintKindFilter] = useState<string>('All');
+  const [enforcementActionFilter, setEnforcementActionFilter] = useState<string>('All');
+  const [resourceNameFilter, setResourceNameFilter] = useState<string>('');
+
+  // State for unique values for dropdowns
+  const [uniqueResourceKinds, setUniqueResourceKinds] = useState<string[]>(['All']);
+  const [uniqueConstraintKinds, setUniqueConstraintKinds] = useState<string[]>(['All']);
+  const [uniqueEnforcementActions, setUniqueEnforcementActions] = useState<string[]>(['All']);
 
   console.log('🔍 [ViolationsList] component mounted');
 
@@ -69,6 +85,37 @@ function ViolationsList({}: ViolationsListProps) {
     return allViolations;
   }, [constraintObjects]);
 
+  // Effect to populate filter dropdown options
+  useEffect(() => {
+    if (violations.length > 0) {
+      const rKinds = new Set<string>(['All']);
+      const cKinds = new Set<string>(['All']);
+      const actions = new Set<string>(['All']);
+
+      violations.forEach(v => {
+        if (v.kind) rKinds.add(v.kind);
+        if (v.constraintKind) cKinds.add(v.constraintKind);
+        if (v.enforcementAction) actions.add(v.enforcementAction);
+      });
+
+      setUniqueResourceKinds(Array.from(rKinds).sort());
+      setUniqueConstraintKinds(Array.from(cKinds).sort());
+      setUniqueEnforcementActions(Array.from(actions).sort());
+    }
+  }, [violations]);
+
+  const filteredViolations = useMemo(() => {
+    return violations.filter(v => {
+      const resourceKindMatch = resourceKindFilter === 'All' || v.kind === resourceKindFilter;
+      const constraintKindMatch = constraintKindFilter === 'All' || v.constraintKind === constraintKindFilter;
+      const enforcementActionMatch = enforcementActionFilter === 'All' || v.enforcementAction === enforcementActionFilter;
+      const fullResourceName = v.namespace ? `${v.namespace}/${v.name}` : v.name;
+      const resourceNameMatch = resourceNameFilter === '' || fullResourceName.toLowerCase().includes(resourceNameFilter.toLowerCase());
+
+      return resourceKindMatch && constraintKindMatch && enforcementActionMatch && resourceNameMatch;
+    });
+  }, [violations, resourceKindFilter, constraintKindFilter, enforcementActionFilter, resourceNameFilter]);
+
   function makeEnforcementActionChip(violation: ViolationWithConstraint) {
     const action = violation.enforcementAction;
     const color = {
@@ -92,13 +139,66 @@ function ViolationsList({}: ViolationsListProps) {
         <Loader title="Loading violations..." />
       ) : (
           <>
-            {constraintObjects.length === 0 && (
-              <Typography sx={{ padding: 2 }}>No violations found.</Typography>
-            )}
+            <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl sx={{ minWidth: 180 }} size="small">
+                <InputLabel id="resource-kind-filter-label">Resource Kind</InputLabel>
+                <Select
+                  labelId="resource-kind-filter-label"
+                  value={resourceKindFilter}
+                  label="Resource Kind"
+                  onChange={(e) => setResourceKindFilter(e.target.value as string)}
+                >
+                  {uniqueResourceKinds.map(kind => (
+                    <MenuItem key={kind} value={kind}>{kind}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl sx={{ minWidth: 180 }} size="small">
+                <InputLabel id="constraint-kind-filter-label">Constraint Kind</InputLabel>
+                <Select
+                  labelId="constraint-kind-filter-label"
+                  value={constraintKindFilter}
+                  label="Constraint Kind"
+                  onChange={(e) => setConstraintKindFilter(e.target.value as string)}
+                >
+                  {uniqueConstraintKinds.map(kind => (
+                    <MenuItem key={kind} value={kind}>{kind}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl sx={{ minWidth: 180 }} size="small">
+                <InputLabel id="enforcement-action-filter-label">Enforcement Action</InputLabel>
+                <Select
+                  labelId="enforcement-action-filter-label"
+                  value={enforcementActionFilter}
+                  label="Enforcement Action"
+                  onChange={(e) => setEnforcementActionFilter(e.target.value as string)}
+                >
+                  {uniqueEnforcementActions.map(action => (
+                    <MenuItem key={action} value={action}>{action}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Resource Name (ns/name or name)"
+                variant="outlined"
+                size="small"
+                value={resourceNameFilter}
+                onChange={(e) => setResourceNameFilter(e.target.value)}
+                sx={{ minWidth: 250 }}
+              />
+            </Box>
             {violations.length === 0 && constraintObjects.length > 0 && (
               <Typography sx={{ padding: 2 }}>No violations found across {constraintObjects.length} constraints.</Typography>
             )}
-            {violations.length > 0 && (
+            {/* Update empty messages based on filters */}
+            {violations.length > 0 && filteredViolations.length === 0 && (
+                <Typography sx={{ padding: 2 }}>No violations match the current filters.</Typography>
+            )}
+            {constraintObjects.length === 0 && violations.length === 0 && (
+              <Typography sx={{ padding: 2 }}>No violations found.</Typography>
+            )}
+            {filteredViolations.length > 0 && (
               <TableContainer component={Paper}>
                 <Table>
                   <TableHead>
@@ -112,7 +212,7 @@ function ViolationsList({}: ViolationsListProps) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {violations.map((violation, index) => (
+                    {filteredViolations.map((violation, index) => (
                       <TableRow key={index}>
                         <TableCell>
                           <Link
