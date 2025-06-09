@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SectionBox, SimpleTable, Link, Loader } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { Typography } from '@mui/material';
+import { Typography, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
 import yaml from 'js-yaml'; // Import js-yaml
 
 // Define a type for the structure of a library item (template)
@@ -153,6 +153,7 @@ function LibraryList() {
   const [templates, setTemplates] = useState<LibraryTemplate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>(''); // '' for All Categories
 
   useEffect(() => {
     setLoading(true);
@@ -169,6 +170,16 @@ function LibraryList() {
         setLoading(false);
       });
   }, []);
+
+  const categories = Array.from(new Set(templates.map(t => t.category))).sort();
+
+  const handleCategoryChange = (event: any) => {
+    setSelectedCategory(event.target.value as string);
+  };
+
+  const filteredTemplates = selectedCategory
+    ? templates.filter(t => t.category === selectedCategory)
+    : templates;
 
   if (loading) {
     return (
@@ -196,18 +207,41 @@ function LibraryList() {
 
   return (
     <SectionBox title="Gatekeeper Library - Templates">
+      <Box mb={2}>
+        <FormControl fullWidth sx={{ maxWidth: 300 }}>
+          <InputLabel id="category-filter-label">Filter by Category</InputLabel>
+          <Select
+            labelId="category-filter-label"
+            id="category-filter-select"
+            value={selectedCategory}
+            label="Filter by Category"
+            onChange={handleCategoryChange}
+          >
+            <MenuItem value="">
+              <em>All Categories</em>
+            </MenuItem>
+            {categories.map(category => (
+              <MenuItem key={category} value={category}>
+                {category}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
       <SimpleTable
-        data={templates}
+        data={filteredTemplates}
         columns={[
           {
             label: 'Name',
-            getter: item => {
-              return (
-                <Link routeName="Library Template Details" params={{ id: item.id }} state={{ template: item }}>
-                  {item.name}
-                </Link>
-              );
-            },
+            getter: item => (
+              <Link
+                routeName="libraryTemplateDetails"
+                params={{ id: item.id }}
+                state={{ template: item }} // Pass the full template object
+              >
+                {item.name}
+              </Link>
+            ),
           },
           {
             label: 'Category',
@@ -217,16 +251,18 @@ function LibraryList() {
             label: 'Description',
             getter: item => item.description,
           },
-          {
-            label: 'Source',
-            getter: item => (
-              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
-                View on GitHub
-              </a>
-            ),
-          },
+          // Remove the Source column
+          // {
+          //   label: 'Source',
+          //   getter: item => (
+          //     <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
+          //       View on GitHub
+          //     </a>
+          //   ),
+          // },
         ]}
-        // sortRows={defaultSortRows}
+        // You might want to add a custom emptyListComponent if templates array is empty
+        // emptyListComponent={() => <Typography>No templates found.</Typography>}
       />
     </SectionBox>
   );

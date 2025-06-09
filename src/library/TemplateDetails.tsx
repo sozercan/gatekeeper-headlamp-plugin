@@ -343,7 +343,7 @@ function LibraryTemplateDetails() {
       if (!constraintObjToApply || !constraintObjToApply.kind || !constraintObjToApply.apiVersion) {
         throw new Error('Parsed constraint YAML is not a valid Kubernetes object.');
       }
-      
+
       const constraintPlural = pluralPath.toLowerCase(); // Already validated that pluralPath exists
       const constraintApiVersion = constraintObjToApply.apiVersion;
       const constraintPostUrl = `/apis/${constraintApiVersion}/${constraintPlural}`;
@@ -388,11 +388,6 @@ function LibraryTemplateDetails() {
           Library Template Details
         </Typography>
         <Typography color="error">{error || "Could not load template details."}</Typography>
-        {libraryTemplateItem?.sourceUrl && (
-          <Typography sx={{mt: 1}}>
-            Source: <a href={libraryTemplateItem.sourceUrl} target="_blank" rel="noopener noreferrer">{libraryTemplateItem.sourceUrl}</a>
-          </Typography>
-        )}
       </Box>
     );
   }
@@ -402,11 +397,6 @@ function LibraryTemplateDetails() {
       <Typography variant="h5" gutterBottom>
               Library Template: {libraryTemplateItem.name}
       </Typography>
-      {libraryTemplateItem.sourceUrl && (
-        <Typography sx={{mb: 2}}>
-          Source: <a href={libraryTemplateItem.sourceUrl} target="_blank" rel="noopener noreferrer">{libraryTemplateItem.sourceUrl}</a>
-        </Typography>
-      )}
       {error && !parsedTemplate && <Typography color="error" gutterBottom>Error: {error}</Typography>}
 
       <SectionBox title="ConstraintTemplate Definition">
