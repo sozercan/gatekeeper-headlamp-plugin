@@ -183,7 +183,7 @@ function LibraryList() {
 
   if (loading) {
     return (
-      <SectionBox title="Gatekeeper Library - Templates">
+      <SectionBox title="Gatekeeper Library">
         <Loader title="Loading Gatekeeper Library..." />
       </SectionBox>
     );
@@ -191,7 +191,7 @@ function LibraryList() {
 
   if (error) {
     return (
-      <SectionBox title="Gatekeeper Library - Templates">
+      <SectionBox title="Gatekeeper Library">
         <Typography color="error">{error}</Typography>
       </SectionBox>
     );
@@ -199,14 +199,14 @@ function LibraryList() {
 
   if (templates.length === 0) {
     return (
-      <SectionBox title="Gatekeeper Library - Templates">
+      <SectionBox title="Gatekeeper Library">
         <Typography>No templates found in the library, or failed to load all of them.</Typography>
       </SectionBox>
     );
   }
 
   return (
-    <SectionBox title="Gatekeeper Library - Templates">
+    <SectionBox title="Gatekeeper Library">
       <Box mb={2}>
         <FormControl fullWidth sx={{ maxWidth: 300 }}>
           <InputLabel id="category-filter-label">Filter by Category</InputLabel>
