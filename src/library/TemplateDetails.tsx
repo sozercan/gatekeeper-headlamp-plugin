@@ -282,6 +282,9 @@ function LibraryTemplateDetails() {
     setApplying(true);
     setSnackbarState(prev => ({ ...prev, open: false }));
 
+    // Define successMessage here to be accessible in the whole try block
+    let successMessage = '';
+
     try {
       // 1. Apply ConstraintTemplate
       let templateObjToApply: any;
@@ -300,17 +303,26 @@ function LibraryTemplateDetails() {
         throw new Error('Parsed template YAML is not a valid Kubernetes object.');
       }
 
-      await ApiProxy.request(
-        `/apis/templates.gatekeeper.sh/v1/constrainttemplates`, // Using v1 as per Gatekeeper docs for CTs
-        {
-          method: 'POST',
-          body: JSON.stringify(templateObjToApply),
-          headers: { 'Content-Type': 'application/json' },
+      try {
+        await ApiProxy.request(
+          `/apis/templates.gatekeeper.sh/v1/constrainttemplates`, // Using v1 as per Gatekeeper docs for CTs
+          {
+            method: 'POST',
+            body: JSON.stringify(templateObjToApply),
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+        successMessage = "ConstraintTemplate applied successfully! Waiting for CRD to be established... ";
+        setSnackbarState({ open: true, message: successMessage, severity: 'info' });
+      } catch (ctError: any) {
+        if (ctError.status === 409) { // HTTP 409 Conflict
+          console.warn(`ConstraintTemplate ${templateObjToApply.metadata.name} already exists. Proceeding to CRD check and Constraint application.`);
+          successMessage = `ConstraintTemplate ${templateObjToApply.metadata.name} already exists. Checking CRD...`;
+          setSnackbarState({ open: true, message: successMessage, severity: 'warning' });
+        } else {
+          throw ctError; // Re-throw other errors
         }
-      );
-      let successMessage = "ConstraintTemplate applied successfully! Waiting for CRD to be established... ";
-      setSnackbarState({ open: true, message: successMessage, severity: 'info' });
-
+      }
 
       // 2. Poll for CRD readiness
       const crdName = `${pluralPath}.constraints.gatekeeper.sh`;
@@ -330,7 +342,6 @@ function LibraryTemplateDetails() {
       }
       successMessage = `ConstraintTemplate applied & CRD ${crdName} established. Applying constraint...`;
       setSnackbarState({ open: true, message: successMessage, severity: 'info' });
-
 
       // 3. Apply Constraint
       let constraintObjToApply: any;

@@ -233,15 +233,17 @@ function LibraryList() {
         columns={[
           {
             label: 'Name',
-            getter: item => (
-              <Link
-                routeName="libraryTemplateDetails"
-                params={{ id: item.id }}
-                state={{ template: item }} // Pass the full template object
-              >
-                {item.name}
-              </Link>
-            ),
+            getter: item => {
+              return (
+                <Link
+                  routeName="Library Template Details"
+                  params={{ id: item.id }}
+                  state={{ template: item }} // Pass the full template object
+                >
+                  {item.name}
+                </Link>
+              );
+            },
           },
           {
             label: 'Category',
