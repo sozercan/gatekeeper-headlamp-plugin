@@ -1,7 +1,7 @@
 version: 0.1.0
 name: gatekeeper
 displayName: Gatekeeper
-createdAt: "2025-06-09T12:25:00-07:00"
+createdAt: '2025-06-09T21:21:45Z'
 description: Headlamp plugin for Gatekeeper
 logoURL: https://www.openpolicyagent.org/img/nav/logo.png
 readme: |-
@@ -16,7 +16,6 @@ readme: |-
   - List and view Constraints
   - View Gatekeeper audit violations
   - Apply policies from Gatekeeper library
-
 keywords:
   - gatekeeper
   - headlamp
@@ -29,3 +28,6 @@ links:
 changes:
   - kind: added
     description: Initial release of the Gatekeeper plugin.
+annotations:
+  headlamp/plugin/archive-url: https://github.com/sozercan/gatekeeper-headlamp-plugin/releases/download/0.1.0/gatekeeper-headlamp-plugin-0.1.0.tar.gz
+  headlamp/plugin/archive-checksum: SHA256:175007d352e17aafab79dc7e89748515e78c16477b624e83f6721b7f94bc462a
