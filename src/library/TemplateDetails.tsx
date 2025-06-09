@@ -59,14 +59,34 @@ interface Constraint extends KubeObjectInterface {
   };
 }
 
+const CRD_ESTABLISHED_TIMEOUT_MS = 30000; // 30 seconds
+const CRD_POLL_INTERVAL_MS = 2000; // 2 seconds
+
+async function checkCRDEstablished(crdName: string): Promise<boolean> {
+  try {
+    const crd = await ApiProxy.request(
+      `/apis/apiextensions.k8s.io/v1/customresourcedefinitions/${crdName}`,
+      { method: 'GET' }
+    );
+    if (crd && crd.status && crd.status.conditions) {
+      const establishedCondition = crd.status.conditions.find(
+        (condition: any) => condition.type === 'Established' && condition.status === 'True'
+      );
+      return !!establishedCondition;
+    }
+  } catch (e: any) {
+    // CRD might not be found yet, which is fine during polling
+    if (e.status !== 404) {
+      console.error(`Error checking CRD ${crdName} status:`, e);
+    }
+  }
+  return false;
+}
+
 function LibraryTemplateDetails() {
   const { id: templateRouteId } = useParams<{ id: string }>();
   const location = useLocation();
   const state = location.state as { template: LibraryTemplateFromState }; // Type assertion for state
-
-  console.log('[TemplateDetails] Component loaded. Route ID:', templateRouteId); // Add log here
-  console.log('[TemplateDetails] Location object:', location); // Add log here
-  console.log('[TemplateDetails] Received state:', state); // Add log here
 
   const [libraryTemplateItem, setLibraryTemplateItem] = useState<LibraryTemplateFromState | null>(null);
   const [parsedTemplate, setParsedTemplate] = useState<ConstraintTemplate | null>(null);
@@ -96,33 +116,88 @@ function LibraryTemplateDetails() {
   });
 
   useEffect(() => {
-    console.log('[TemplateDetails] useEffect triggered. State:', state, 'Route ID:', templateRouteId); // Add log here
     if (state && state.template && state.template.id === templateRouteId) {
       setLibraryTemplateItem(state.template);
       if (state.template.rawYAML) {
+        console.log('[TemplateDetails] Raw YAML:', state.template.rawYAML); // Log raw YAML
         try {
-          const parsedDocs = yaml.loadAll(state.template.rawYAML) as any[];
-          if (parsedDocs && parsedDocs.length > 0) {
-            const pt = parsedDocs[0] as ConstraintTemplate;
-            setParsedTemplate(pt);
-            setConstraintName(`my-${pt.metadata.name?.toLowerCase() || state.template.id}-constraint`);
+          const parsedDocs = yaml.loadAll(state.template.rawYAML) as KubeObjectInterface[];
+          console.log('[TemplateDetails] Parsed YAML docs:', parsedDocs); // Log parsed docs
 
-            // Pre-fill example parameters based on schema
-            if (pt.spec.crd.spec.validation?.openAPIV3Schema?.properties) {
-              const exampleParams: Record<string, any> = {};
-              const props = pt.spec.crd.spec.validation.openAPIV3Schema.properties;
-              for (const key in props) {
-                // Basic type-based example generation
-                if (props[key].type === 'string') exampleParams[key] = 'exampleValue';
-                else if (props[key].type === 'integer' || props[key].type === 'number') exampleParams[key] = 123;
-                else if (props[key].type === 'boolean') exampleParams[key] = true;
-                else if (props[key].type === 'array') exampleParams[key] = ['item1', 'item2'];
-                else if (props[key].type === 'object') exampleParams[key] = { prop: 'value' };
-                else exampleParams[key] = null; // Default for other types
+          if (parsedDocs && parsedDocs.length > 0) {
+            const constraintTemplateDoc = parsedDocs.find(
+              doc => doc && doc.kind === 'ConstraintTemplate'
+            ) as ConstraintTemplate | undefined;
+            console.log('[TemplateDetails] Found ConstraintTemplate doc:', constraintTemplateDoc); // Log found CT doc
+
+            if (constraintTemplateDoc) {
+              // Log the nested properties step-by-step
+              console.log('[TemplateDetails] CT doc spec:', constraintTemplateDoc.spec);
+              if (constraintTemplateDoc.spec) {
+                console.log('[TemplateDetails] CT doc spec.crd:', constraintTemplateDoc.spec.crd);
+                if (constraintTemplateDoc.spec.crd) {
+                  console.log('[TemplateDetails] CT doc spec.crd.spec:', constraintTemplateDoc.spec.crd.spec);
+                  if (constraintTemplateDoc.spec.crd.spec) {
+                    console.log('[TemplateDetails] CT doc spec.crd.spec.names:', constraintTemplateDoc.spec.crd.spec.names);
+                  }
+                }
               }
-              setConstraintParams(JSON.stringify(exampleParams, null, 2));
+
+              const names = constraintTemplateDoc.spec?.crd?.spec?.names;
+              const originalKind = names?.kind;
+              const originalPlural = names?.plural;
+
+              if (!originalKind) {
+                const errorMessage = `Selected ConstraintTemplate (${constraintTemplateDoc.metadata.name || 'Unknown Name'}) is malformed. It's missing 'kind' under spec.crd.spec.names. This field is essential. Please check the template definition from the library.`;
+                console.error('[TemplateDetails] Malformed ConstraintTemplate:', errorMessage, constraintTemplateDoc);
+                setError(errorMessage);
+                setParsedTemplate(null);
+              } else {
+                let templateToUse = constraintTemplateDoc;
+                let currentError = null; // Store potential error locally before setting state
+
+                if (!originalPlural) {
+                  const inferredPlural = originalKind.toLowerCase(); // Use lowercase kind directly
+                  console.warn(
+                    `[TemplateDetails] ConstraintTemplate (${constraintTemplateDoc.metadata.name || 'Unknown Name'}) is missing 'plural' under spec.crd.spec.names. Inferring as '${inferredPlural}' (lowercase of kind). This may not always be correct. Consider updating the template definition in the library.`
+                  );
+                  // Create a mutable deep copy to avoid modifying the original object from parsedDocs
+                  const mutableTemplateDoc = JSON.parse(JSON.stringify(constraintTemplateDoc)) as ConstraintTemplate;
+                  // Ensure path exists before assignment (it should, as originalKind exists)
+                  if (mutableTemplateDoc.spec && mutableTemplateDoc.spec.crd && mutableTemplateDoc.spec.crd.spec && mutableTemplateDoc.spec.crd.spec.names) {
+                    mutableTemplateDoc.spec.crd.spec.names.plural = inferredPlural;
+                  }
+                  templateToUse = mutableTemplateDoc;
+                } else {
+                  // Both kind and plural are present
+                }
+
+                setError(currentError); // Set error state (null if plural was inferred or already present)
+                setParsedTemplate(templateToUse);
+                setConstraintName(
+                  `my-${templateToUse.metadata.name?.toLowerCase() || state.template.id}-constraint`
+                );
+
+                // Pre-fill example parameters based on schema
+                if (templateToUse.spec?.crd?.spec?.validation?.openAPIV3Schema?.properties) {
+                  const exampleParams: Record<string, any> = {};
+                  const props = templateToUse.spec.crd.spec.validation.openAPIV3Schema.properties;
+                  for (const key in props) {
+                    if (props[key].type === 'string') exampleParams[key] = 'exampleValue';
+                    else if (props[key].type === 'integer' || props[key].type === 'number') exampleParams[key] = 123;
+                    else if (props[key].type === 'boolean') exampleParams[key] = true;
+                    else if (props[key].type === 'array') exampleParams[key] = ['item1', 'item2'];
+                    else if (props[key].type === 'object') exampleParams[key] = { prop: 'value' };
+                    else exampleParams[key] = null;
+                  }
+                  setConstraintParams(JSON.stringify(exampleParams, null, 2));
+                } else {
+                  setConstraintParams('{}');
+                }
+              }
             } else {
-              setConstraintParams('{}');
+              setError('Failed to find a ConstraintTemplate document in the provided YAML.');
+              setParsedTemplate(null); // Ensure if no CT doc, parsedTemplate is also null
             }
           } else {
             setError('Failed to parse ConstraintTemplate YAML: No documents found.');
@@ -135,7 +210,6 @@ function LibraryTemplateDetails() {
       }
     } else {
       setError('Template data not found or ID mismatch.');
-      console.error('[TemplateDetails] Data mismatch or not found. State:', state, 'Expected ID:', templateRouteId); // Add log here
     }
     setLoading(false);
   }, [state, templateRouteId]);
@@ -196,13 +270,28 @@ function LibraryTemplateDetails() {
       return;
     }
 
+    // Ensure pluralPath is valid before proceeding (already validated in useEffect, but good for safety)
+    const pluralPath = parsedTemplate?.spec?.crd?.spec?.names?.plural;
+    if (!pluralPath) {
+      const errorMessage = `Cannot apply: ConstraintTemplate (${parsedTemplate?.metadata?.name}) is missing the required 'plural' name under spec.crd.spec.names.`;
+      console.error('[TemplateDetails] Apply error:', errorMessage, parsedTemplate);
+      setSnackbarState({ open: true, message: errorMessage, severity: 'error' });
+      return;
+    }
+
     setApplying(true);
     setSnackbarState(prev => ({ ...prev, open: false }));
 
     try {
+      // 1. Apply ConstraintTemplate
       let templateObjToApply: any;
       try {
-        templateObjToApply = yaml.load(libraryTemplateItem.rawYAML);
+        // We need to find the ConstraintTemplate document specifically if rawYAML contains multiple docs
+        const parsedDocs = yaml.loadAll(libraryTemplateItem.rawYAML) as KubeObjectInterface[];
+        templateObjToApply = parsedDocs.find(doc => doc && doc.kind === 'ConstraintTemplate');
+        if (!templateObjToApply) {
+          throw new Error('ConstraintTemplate document not found in the provided YAML.');
+        }
       } catch (e: any) {
         throw new Error(`Invalid ConstraintTemplate YAML: ${e.message}`);
       }
@@ -212,15 +301,38 @@ function LibraryTemplateDetails() {
       }
 
       await ApiProxy.request(
-        `/apis/templates.gatekeeper.sh/v1/constrainttemplates`,
+        `/apis/templates.gatekeeper.sh/v1/constrainttemplates`, // Using v1 as per Gatekeeper docs for CTs
         {
           method: 'POST',
           body: JSON.stringify(templateObjToApply),
           headers: { 'Content-Type': 'application/json' },
         }
       );
-      let successMessage = "ConstraintTemplate applied successfully! ";
+      let successMessage = "ConstraintTemplate applied successfully! Waiting for CRD to be established... ";
+      setSnackbarState({ open: true, message: successMessage, severity: 'info' });
 
+
+      // 2. Poll for CRD readiness
+      const crdName = `${pluralPath}.constraints.gatekeeper.sh`;
+      let crdEstablished = false;
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < CRD_ESTABLISHED_TIMEOUT_MS) {
+        if (await checkCRDEstablished(crdName)) {
+          crdEstablished = true;
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, CRD_POLL_INTERVAL_MS));
+      }
+
+      if (!crdEstablished) {
+        throw new Error(`CRD ${crdName} was not established within ${CRD_ESTABLISHED_TIMEOUT_MS / 1000} seconds.`);
+      }
+      successMessage = `ConstraintTemplate applied & CRD ${crdName} established. Applying constraint...`;
+      setSnackbarState({ open: true, message: successMessage, severity: 'info' });
+
+
+      // 3. Apply Constraint
       let constraintObjToApply: any;
       try {
         constraintObjToApply = yaml.load(generatedConstraintYAML);
@@ -231,10 +343,9 @@ function LibraryTemplateDetails() {
       if (!constraintObjToApply || !constraintObjToApply.kind || !constraintObjToApply.apiVersion) {
         throw new Error('Parsed constraint YAML is not a valid Kubernetes object.');
       }
-
-      const constraintPlural = parsedTemplate.spec.crd.spec.names.plural.toLowerCase();
+      
+      const constraintPlural = pluralPath.toLowerCase(); // Already validated that pluralPath exists
       const constraintApiVersion = constraintObjToApply.apiVersion;
-
       const constraintPostUrl = `/apis/${constraintApiVersion}/${constraintPlural}`;
 
       await ApiProxy.request(
@@ -245,7 +356,7 @@ function LibraryTemplateDetails() {
           headers: { 'Content-Type': 'application/json' },
         }
       );
-      successMessage += "Constraint applied successfully!";
+      successMessage = "ConstraintTemplate and Constraint applied successfully!";
       setSnackbarState({ open: true, message: successMessage, severity: 'success' });
 
     } catch (err: any) {

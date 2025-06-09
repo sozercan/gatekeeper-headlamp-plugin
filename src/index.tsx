@@ -123,7 +123,7 @@ registerRoute({
 registerRoute({
   path: RoutingPath.LibraryTemplate,
   name: 'Library Template Details', // Name for the route
-  sidebar: null, // Detail view, no dedicated sidebar highlight beyond parent
+  sidebar: 'policylibrary', // Changed from null
   exact: true, // Add exact: true here
   component: LibraryTemplateDetails,
 });
