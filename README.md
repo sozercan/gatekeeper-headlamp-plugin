@@ -2,6 +2,8 @@
 
 A Headlamp plugin for viewing and managing [OPA Gatekeeper](https://open-policy-agent.github.io/gatekeeper/) policies, violations, and a library of community-sourced templates in Kubernetes clusters.
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/gatekeeper-headlamp-plugin)](https://artifacthub.io/packages/search?repo=gatekeeper-headlamp-plugin)
+
 ## Features
 
 - **ConstraintTemplates**: View Gatekeeper constraint templates.
@@ -30,7 +32,11 @@ A Headlamp plugin for viewing and managing [OPA Gatekeeper](https://open-policy-
 - A Kubernetes cluster with [OPA Gatekeeper installed](https://open-policy-agent.github.io/gatekeeper/website/docs/install/).
 - Node.js and npm (or yarn).
 
-## Installation & Development
+## Installation
+
+
+
+## Development
 
 This project uses a `Makefile` for common tasks.
 
@@ -65,13 +71,3 @@ After running `make deploy` (or `make setup`/`make dev`), the plugin should be a
 - Windows: `%APPDATA%/Headlamp/plugins/gatekeeper-headlamp-plugin/`
 
 Restart Headlamp if it was running. The "Gatekeeper" section will appear in the sidebar.
-
-## Plugin Structure
-
-- `src/index.tsx`: Main plugin entry point, routing, and sidebar integration.
-- `src/model.ts`: Kubernetes custom resource class definitions and dynamic type discovery.
-- `src/library/`: Components for the Gatekeeper Library feature.
-- `src/constraint-template/`, `src/constraint/`, `src/violations/`: Components for respective views.
-- `src/types/`: TypeScript type definitions.
-- `hack/`: Build and utility scripts.
-

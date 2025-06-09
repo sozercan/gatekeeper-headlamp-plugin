@@ -1,6 +1,5 @@
 name: Release
 env:
-  REGISTRY: 'ghcr.io'
   NODE_VERSION: '22.X'
   RELEASE_TAR: 'gatekeeper-headlamp-plugin-${{ github.event.inputs.releaseVersion }}.tar.gz'
 
@@ -34,14 +33,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
+      - name: Install dependencies and build
         run: make setup
 
-      - name: Build
-        run: make build
-
       - name: Update package.json
-        uses: fjogeleit/yaml-update-action@main
+        uses: fjogeleit/yaml-update-action@v0.16.1
         with:
           valueFile: package.json
           propertyPath: version
@@ -65,7 +61,7 @@ jobs:
           echo "value=$(date +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       - name: Update artifacthub-pkg.yml
-        uses: fjogeleit/yaml-update-action@main
+        uses: fjogeleit/yaml-update-action@v0.16.1
         with:
           valueFile: artifacthub-pkg.yml
           changes: |

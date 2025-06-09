@@ -4,6 +4,15 @@ displayName: Gatekeeper
 createdAt: '2025-06-09T21:21:45Z'
 description: Headlamp plugin for Gatekeeper
 logoURL: https://www.openpolicyagent.org/img/nav/logo.png
+screenshots:
+  - title: violations
+    url: https://raw.githubusercontent.com/sozercan/gatekeeper-headlamp-plugin/refs/heads/master/images/violations.png
+  - title: constraints
+    url: https://raw.githubusercontent.com/sozercan/gatekeeper-headlamp-plugin/refs/heads/master/images/constraints.png
+  - title: constraint-templates
+    url: https://raw.githubusercontent.com/sozercan/gatekeeper-headlamp-plugin/refs/heads/master/images/constraint_template.png
+  - title: library
+    url: https://raw.githubusercontent.com/sozercan/gatekeeper-headlamp-plugin/refs/heads/master/images/library.png
 readme: |-
   # Gatekeeper Headlamp Plugin
 
@@ -16,6 +25,12 @@ readme: |-
   - List and view Constraints
   - View Gatekeeper audit violations
   - Apply policies from Gatekeeper library
+install: |
+  Desktop Headlamp
+  - Install Headlamp (https://headlamp.dev/docs/latest/installation/desktop/)
+  - Open Plugin Catalog
+  - Select the Gatekeeper plugin and click the install button
+  - After install you may need to restart Headlamp
 keywords:
   - gatekeeper
   - headlamp
@@ -25,9 +40,10 @@ keywords:
 links:
   - name: source
     url: https://github.com/sozercan/gatekeeper-headlamp-plugin
-changes:
-  - kind: added
-    description: Initial release of the Gatekeeper plugin.
+  - name: Gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/
 annotations:
   headlamp/plugin/archive-url: https://github.com/sozercan/gatekeeper-headlamp-plugin/releases/download/0.1.0/gatekeeper-headlamp-plugin-0.1.0.tar.gz
   headlamp/plugin/archive-checksum: SHA256:175007d352e17aafab79dc7e89748515e78c16477b624e83f6721b7f94bc462a
+  headlamp/plugin/version-compat: '>=0.29'
+  headlamp/plugin/distro-compat: in-cluster,web,docker-desktop,desktop
