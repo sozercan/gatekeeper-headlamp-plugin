@@ -73,7 +73,7 @@ registerRoute({
   path: RoutingPath.ConstraintTemplate,
   name: 'Constraint Template Details',
   exact: true,
-  sidebar: null,
+  sidebar: 'constrainttemplates',
   component: () => <ConstraintTemplateDetails />,
 });
 
