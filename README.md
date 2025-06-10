@@ -1,6 +1,6 @@
 # Gatekeeper Headlamp Plugin
 
-A Headlamp plugin for viewing and managing [OPA Gatekeeper](https://open-policy-agent.github.io/gatekeeper/) policies, violations, and a library of community-sourced templates in Kubernetes clusters.
+A [Headlamp](https://headlamp.dev) plugin for viewing and managing [OPA Gatekeeper](https://open-policy-agent.github.io/gatekeeper/) policies, violations, and a library of community-sourced templates in Kubernetes clusters.
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/gatekeeper-headlamp-plugin)](https://artifacthub.io/packages/search?repo=gatekeeper-headlamp-plugin)
 
@@ -29,12 +29,15 @@ A Headlamp plugin for viewing and managing [OPA Gatekeeper](https://open-policy-
 ## Prerequisites
 
 - Headlamp installed and configured.
-- A Kubernetes cluster with [OPA Gatekeeper installed](https://open-policy-agent.github.io/gatekeeper/website/docs/install/).
-- Node.js and npm (or yarn).
+- A Kubernetes cluster with [Gatekeeper installed](https://open-policy-agent.github.io/gatekeeper/website/docs/install/).
+- For development of the plugin: Node.js and npm (or yarn).
 
 ## Installation
 
-
+- Install [Headlamp](https://headlamp.dev)
+- Open Plugin Catalog
+- Select the Gatekeeper plugin and click the install button
+- After install you may need to restart Headlamp
 
 ## Development
 
